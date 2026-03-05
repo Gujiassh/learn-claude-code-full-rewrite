@@ -10,6 +10,10 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = []
 
+[project.scripts]
+rewrite-agent = "full_rewrite.cli:main"
+rewrite-api = "full_rewrite.api:main"
+
 [project.optional-dependencies]
 dev = ["pytest>=8.0.0"]
 
