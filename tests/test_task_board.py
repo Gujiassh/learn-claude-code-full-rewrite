@@ -54,3 +54,23 @@ def test_duplicate_task_id_raises(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError):
         board.add_task("dup", "two")
+
+
+def test_complete_requires_in_progress(tmp_path: Path) -> None:
+    board = TaskBoard(tmp_path / "board.json")
+    board.add_task("a", "a")
+
+    with pytest.raises(ValueError):
+        board.complete("a")
+
+
+def test_complete_with_actor_enforces_assignee(tmp_path: Path) -> None:
+    board = TaskBoard(tmp_path / "board.json")
+    board.add_task("a", "a")
+    board.claim_next_ready("worker-1")
+
+    with pytest.raises(PermissionError):
+        board.complete("a", actor="worker-2")
+
+    row = board.complete("a", actor="worker-1")
+    assert row.status == "completed"

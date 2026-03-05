@@ -83,10 +83,22 @@ class TaskBoard:
     def get(self, task_id: str) -> TaskItem | None:
         return self._tasks.get(task_id)
 
-    def complete(self, task_id: str) -> TaskItem:
+    def complete(self, task_id: str, actor: str | None = None) -> TaskItem:
         item = self._tasks.get(task_id)
         if item is None:
             raise KeyError(task_id)
+        if item.status == "completed":
+            return item
+        if item.status != "in_progress":
+            raise ValueError(f"task is not in progress: {task_id}")
+        if actor is not None:
+            worker = actor.strip()
+            if not worker:
+                raise ValueError("actor is required")
+            if item.assignee != worker:
+                raise PermissionError(
+                    f"actor '{worker}' cannot complete task assigned to '{item.assignee}'"
+                )
         item.status = "completed"
         item.updated_at = now_iso()
         self.save()

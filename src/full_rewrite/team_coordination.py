@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -11,6 +12,7 @@ from .task_board import TaskBoard
 
 
 UTC = timezone.utc
+RECEIVER_RE = re.compile(r"^[A-Za-z0-9_.-]+$")
 
 
 def now_iso() -> str:
@@ -33,8 +35,17 @@ class TeamMailbox:
         self.root.mkdir(parents=True, exist_ok=True)
         self._cursor: dict[str, int] = {}
 
+    def _normalize_receiver(self, receiver: str) -> str:
+        name = receiver.strip()
+        if not name:
+            raise ValueError("receiver is required")
+        if not RECEIVER_RE.fullmatch(name):
+            raise ValueError(f"invalid receiver name: {receiver}")
+        return name
+
     def _path(self, receiver: str) -> Path:
-        return self.root / f"{receiver}.jsonl"
+        safe_receiver = self._normalize_receiver(receiver)
+        return self.root / f"{safe_receiver}.jsonl"
 
     def send(
         self, msg_type: str, sender: str, receiver: str, payload: dict[str, Any]
@@ -54,13 +65,14 @@ class TeamMailbox:
         return message
 
     def receive_new(self, receiver: str) -> list[TeamMessage]:
-        path = self._path(receiver)
+        safe_receiver = self._normalize_receiver(receiver)
+        path = self._path(safe_receiver)
         if not path.exists():
             return []
         lines = path.read_text(encoding="utf-8").splitlines()
-        start = self._cursor.get(receiver, 0)
+        start = self._cursor.get(safe_receiver, 0)
         rows = lines[start:]
-        self._cursor[receiver] = len(lines)
+        self._cursor[safe_receiver] = len(lines)
         out: list[TeamMessage] = []
         for row in rows:
             data = json.loads(row)
@@ -98,7 +110,7 @@ class TeamCoordinator:
         return {"task_id": task.task_id, "title": task.title}
 
     def report_done(self, worker: str, task_id: str) -> None:
-        task = self.board.complete(task_id)
+        task = self.board.complete(task_id, actor=worker)
         self.mailbox.send(
             msg_type="task_completed",
             sender=worker,

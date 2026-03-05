@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from src.full_rewrite.task_board import TaskBoard
 from src.full_rewrite.team_coordination import TeamCoordinator, TeamMailbox
 
@@ -57,3 +59,22 @@ def test_receive_new_only_returns_incremental_messages(tmp_path: Path) -> None:
     third = mailbox.receive_new("worker")
     assert len(third) == 1
     assert third[0].payload["task_id"] == "b"
+
+
+def test_report_done_rejects_non_assignee(tmp_path: Path) -> None:
+    board = TaskBoard(tmp_path / "board.json")
+    board.add_task("a", "task-a")
+
+    mailbox = TeamMailbox(tmp_path / "mail")
+    coordinator = TeamCoordinator(board=board, mailbox=mailbox, lead_name="lead")
+    coordinator.assign_next("worker-1")
+
+    with pytest.raises(PermissionError):
+        coordinator.report_done("worker-2", "a")
+
+
+def test_mailbox_rejects_unsafe_receiver_name(tmp_path: Path) -> None:
+    mailbox = TeamMailbox(tmp_path / "mail")
+
+    with pytest.raises(ValueError):
+        mailbox.send("task_assigned", "lead", "../worker", {"task_id": "a"})
