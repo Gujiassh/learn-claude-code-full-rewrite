@@ -1,5 +1,6 @@
 from .phase_log import PhaseEntry, PhaseLog
 from .runtime import AgentLoop, ToolCall, ToolRegistry
+from .task_board import TaskBoard, TaskItem
 
 __all__ = [
     "AgentLoop",
@@ -7,4 +8,6 @@ __all__ = [
     "ToolRegistry",
     "PhaseEntry",
     "PhaseLog",
+    "TaskItem",
+    "TaskBoard",
 ]
