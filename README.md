@@ -9,12 +9,13 @@
 
 ## 当前状态
 
-- 阶段：`阶段-02 任务系统`
+- 阶段：`阶段-03 背景执行`
 - 已完成：
   - `AgentLoop` 核心循环
   - `ToolRegistry` 工具注册与调用
   - `PhaseLog` 阶段记录写入
   - `TaskBoard` 任务系统（依赖、领取、完成、持久化）
+  - `BackgroundJobRunner` 后台任务执行与状态追踪
   - 基础单测
 
 ## 项目结构
